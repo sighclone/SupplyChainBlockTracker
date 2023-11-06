@@ -1,92 +1,136 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract SupplyChainManagement {
-    address public owner;
+// import "@openzeppelin/contracts/utils/Strings.sol";
 
-    enum Participant {
-        Manufacturer,
-        Supplier,
-        Logistics,
-        Customer
-    }
+contract supply {
 
-    struct Product {
-        string name;
-        uint256 valueInINR;
-        address currentOwner;
-        Participant[] participants;
-    }
-
-    mapping(uint256 => Product) public products;    // ID
-    uint256 public productCounter;
-
-    event ProductCreated(
-        uint256 indexed productId,
-        string name,
-        uint256 valueInINR,
-        address currentOwner
-    );
-    event ProductTransferred(
-        uint256 indexed productId,
-        uint256 addedValueInINR,
-        address previousOwner,
-        address newOwner
-    );
-
-    modifier onlyOwner() {
-        require(
-            msg.sender == owner,
-            "Only the contract owner can perform this action!"
-        );
-        _;
-    }
+    address payable public admin;
 
     constructor() {
-        owner = msg.sender;
-        productCounter = 0;
+        admin = payable(msg.sender);
     }
 
-    function createProduct(string memory name, uint256 quantity) public {
-        uint256 productId = productCounter;
-        products[productId] = Product(
-            name,
-            quantity,
-            msg.sender,
-            new Participant[](0)
-        );
-        products[productId].participants.push(Participant.Manufacturer);
-        emit ProductCreated(productId, name, quantity, msg.sender);
-        productCounter++;
+    struct prod {
+        uint256 ID;
+        string name;
+        string desc;
+        uint256 price;
+        address manufacturer;
+        address supplier;
+        bool isSupplier;
+        address retailer;
+        bool isRetailer;
+        // address currentlyHeldBy;
+        bool isSold;
     }
 
-    function transferOwnership(uint256 productId, uint256 addedValueInINR, address newOwner) public {
-        Product storage product = products[productId];
-        require(
-            product.currentOwner == msg.sender,
-            "Only the current owner can transfer ownership"
-        );
-
-        if (msg.sender == owner) {
-            product.participants.push(Participant.Supplier);
-        } else if (newOwner == owner) {
-            product.participants.push(Participant.Logistics);
-        } else {
-            product.participants.push(Participant.Customer);
-        }
-
-        product.currentOwner = newOwner;
-        product.valueInINR = product.valueInINR + addedValueInINR;
-        emit ProductTransferred(productId, addedValueInINR, msg.sender, newOwner);
+    struct man {
+        string name;
+        // mapping(uint256 => prod) prodList;
+        uint256 numOfProdsMade;
+        bool isMan;
     }
 
-    function getProductInfo(uint256 productId) public view returns (string memory, uint256, address, Participant[] memory)    {
-        Product storage product = products[productId];
-        return (
-            product.name,
-            product.valueInINR, // limit qty to 1
-            product.currentOwner,
-            product.participants
-        );
+    mapping(address => man) public mapMan;
+    mapping(uint256 => prod) public prodList;
+    uint256 public prodCount=0;
+
+    function createMan(string calldata name) public {
+        require(!mapMan[msg.sender].isMan, "Manufacturer already exists!");
+        man storage m = mapMan[msg.sender];
+        m.name = name;
+        m.numOfProdsMade = 0;
+        m.isMan = true;
+
+        // p.prodList[0] = prod("NoID", "placeholder", "noDesc", 0);
+        // mapMan[msg.sender] = man(name, prod(), 0, true);
     }
+
+    function addProd(
+        string calldata name,
+        string calldata desc,
+        uint256 price
+    ) public {
+        require(mapMan[msg.sender].isMan, "User is not a manufacturer");
+        uint256 prodID = mapMan[msg.sender].numOfProdsMade;
+        // string(abi.encodePacked(msg.sender))
+        uint256 ID = prodID;
+        // mapMan[msg.sender].prodList[prodID] = (prod(ID, name, desc, price));
+        prodList[prodCount] = prod(ID, name, desc, price, msg.sender, admin, false, admin, false, false);
+        prodCount++;
+        mapMan[msg.sender].numOfProdsMade++;
+    }
+
+    struct supplier {
+        address addr;
+        string name;
+        uint256 percentCharged;
+        bool isSup;
+    }
+
+    uint256 public supplyCount = 0;
+    mapping(address => supplier) public mapSup;
+    mapping(uint256 => supplier) public supList;
+
+    function createSupplier(string calldata name, uint256 percentCharged) public {
+        require(!mapSup[msg.sender].isSup, "Supplier already exists!");
+        supplier memory s = supplier(msg.sender, name, percentCharged, true);
+        mapSup[msg.sender]=s;
+        supList[supplyCount]=s;
+        supplyCount++;
+    }
+
+    struct retailer{
+        string name;
+        string desc;
+        mapping(uint256 => prod) prodList;
+        uint256 heldCount;
+        bool isRet;
+    }
+
+    mapping(address => retailer) public mapRet;
+    mapping(uint256 => prod) public isWithRetailer;
+    uint256 public retailedProdCount = 0;
+
+    function createRetailer(string calldata name, string calldata desc) public {
+        require(!mapRet[msg.sender].isRet, "Retailer already exists!");
+        retailer storage p = mapRet[msg.sender];
+        p.name = name;
+        p.desc = desc;
+        p.heldCount = 1;
+        p.isRet = true;
+
+        p.prodList[0] = prod(0, "DUM", "DUM", 0, admin, admin, false, admin, false, false);
+    }
+
+    function retBuyProd(uint256 prodID, uint256 supplyID, uint256 retailPrice) public payable {
+        require(!prodList[prodID].isSold, "Product already sold to a customer!");
+        require(mapRet[msg.sender].isRet, "Only retialer can perform this action!");
+
+        prod storage product = prodList[prodID];
+        supplier storage sup = supList[supplyID];
+
+        uint256 priceForRetailer = product.price + (product.price * sup.percentCharged/100);
+        require(priceForRetailer <= msg.value, "Insufficient wallet balance!");
+        payable(product.manufacturer).transfer(product.price);
+        payable(sup.addr).transfer((product.price * sup.percentCharged/100));
+        product.supplier=sup.addr;
+        product.isSupplier=true;
+        product.retailer=msg.sender;
+        product.isRetailer=true;
+        // product.currentltyHeldBy = product.retailer;
+        product.price=retailPrice;
+        isWithRetailer[retailedProdCount] = product;
+        retailedProdCount++;
+    }
+
+    function buy(uint prodID) public payable {
+        prod storage product = isWithRetailer[prodID];
+        require(!prodList[prodID].isSold, "Product already sold to a customer!");
+        require(product.price <= msg.value, "Insufficient wallet balance!");
+        payable(product.retailer).transfer(product.price);
+        product.isSold = true;
+    }
+
 }
