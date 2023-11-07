@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <title>Member View</title>
+    </head>
+    <body>
+        <h2>Member View</h2>
+        <p>Supply chain members can perform actions from here!</p>
+        <div id="creatorview">
+            <h3>Register a new member to the network</h3>
+            <div id="createMan">
+                <input type="text" id="manName" placeholder="manufacturer name">
+                <button type="button" onclick="">Create</button>
+            </div><br>
+            <div id="createSup">
+                <input type="text" id="supName" placeholder="Supplier name"><br>
+                <input type="text" id="supPercentCharge" placeholder="percentage price charged">
+                <button type="button" onclick="">Create</button>
+            </div><br>
+            <div id="createRet">
+                <input type="text" id="retName" placeholder="retailer name"><br>
+                <input type="text" id="retDesc" placeholder="retailer brand description">
+                <button type="button" onclick="">Create</button>
+            </div><br>
+        </div><br>
+        <div id="manView">
+            <h3>Add a new product</h3>
+            <div id="addProd">
+                <input type="text" id="prodName" placeholder="Product name"><br>
+                <input type="text" id="prodDesc" placeholder="Product description"><br>
+                <input type="number" id="prodPrice" placeholder="manufacturer cost">
+                <button type="button" onclick="">Create</button>
+            </div><br>
+        </div>
+        <div id="infoView">
+            <h3>Products:</h3><div id="prodList"></div><button type="button">Fetch</button>
+            <h3>Suppliers:</h3><div id="supList"></div><button type="button">Fetch</button>
+        </div>
+        <div id="retView">
+            <h3>Buy a product from manufacturer through supplier, as a retailer</h3>
+            <div id="addProd">
+                <input type="text" id="prodID" placeholder="Product ID"><br>
+                <input type="text" id="supID" placeholder="Supplier ID"><br>
+                <input type="number" id="prodPrice" placeholder="Selling price for customers">
+                <button type="button" onclick="">Create</button>
+            </div><br>
+        </div>
+    </body>
+</html>
