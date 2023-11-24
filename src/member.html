@@ -3,7 +3,6 @@
 <head>
     <title>Member View</title>
     <!-- <script type="module" src="./networks.js"></script> -->
-    <script src="member.js" type="module"></script>
 </head>
 
 <body>
@@ -12,8 +11,8 @@
     <div id="creatorview">
         <h3>Register a new member to the network</h3>
         <div id="createMan">
-            <input type="text" id="manName" placeholder="manufacturer name">
-            <button type="button" onclick="">Create</button>
+            <input type="text" id="manu" placeholder="manufacturer name" />
+            <button type="button" id="createManBtn">Create</button>
         </div><br>
         <div id="createSup">
             <input type="text" id="supName" placeholder="Supplier name"><br>
@@ -32,12 +31,12 @@
             <input type="text" id="prodName" placeholder="Product name"><br>
             <input type="text" id="prodDesc" placeholder="Product description"><br>
             <input type="number" id="prodPrice" placeholder="manufacturer cost">
-            <button type="button" onclick="">Create</button>
+            <button type="button" id="addProdBtn" onclick="">Create</button>
         </div><br>
     </div>
     <div id="infoView">
         <h3>Products:</h3>
-        <div id="prodList"></div><button type="button">Fetch</button>
+        <div id="prodList"></div><button id="prodListBtn" type="button">Fetch</button>
         <h3>Suppliers:</h3>
         <div id="supList"></div><button type="button">Fetch</button>
     </div>
@@ -51,11 +50,13 @@
         </div><br>
     </div>
     <div id="retData">
-        <div id="chainID">The Chain ID is:</div>
-        <div id="accounts">The Accounts are:</div>
-        <div id="currentBlock">The current block in the network is:</div>
+        <div id="userAcc">Account is:</div>
+        <div id="chainID">The Chain ID is: </div>
+        <div id="currentBlock">The current block in the network is: </div>
     </div>
 
+    <script src="member.js" type="module"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js"></script>
 </body>
 
 </html>

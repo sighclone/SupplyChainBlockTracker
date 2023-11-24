@@ -36,55 +36,233 @@ await window.ethereum.request({
     "method": "wallet_requestPermissions",
     "params": [
         {
-            "eth_accounts": {}
-        }
+            "eth_accounts": {},
+        },
     ]
 });
 
 const ChainId = await window.ethereum.request({ method: 'eth_chainId' });
-const Accounts = await window.ethereum.request({ method: 'eth_accounts' });
+const uAccs = await window.ethereum.request({ method: 'eth_accounts' });
 const blockNum = await window.ethereum.request({ method: 'eth_blockNumber' });
-window.ethereum.on('chainChanged', handleChainChanged);
+
 var chainID = document.getElementById("chainID");
-var accounts = document.getElementById("accounts");
+var accounts = document.getElementById("userAcc");
 var currentBlock = document.getElementById("currentBlock");
+
 chainID.innerHTML += ChainId;
-accounts.innerHTML += Accounts;
+accounts.innerText += uAccs;
+console.log(uAccs);
 currentBlock.innerHTML += blockNum;
+
 console.log("DOM Success");
+
+window.ethereum.on('chainChanged', handleChainChanged);
 function handleChainChanged(chainId) {
     // We recommend reloading the page, unless you must do otherwise.
     window.location.reload();
 }
 
-const contractAddress = '0xa242660786Dd9223843228A2EA6c3e21feF44Cd1';
-const contractABI = [
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "getSomeValue",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
+const abi = [
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "name",
+                "type": "string"
+            }
+        ],
+        "name": "createMan",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "desc",
+                "type": "string"
+            },
+            {
+                "name": "price",
+                "type": "uint256"
+            }
+        ],
+        "name": "addProd",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "percentCharged",
+                "type": "uint256"
+            }
+        ],
+        "name": "createSupplier",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "desc",
+                "type": "string"
+            }
+        ],
+        "name": "createRetailer",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "prodID",
+                "type": "uint256"
+            },
+            {
+                "name": "supplyID",
+                "type": "uint256"
+            },
+            {
+                "name": "retailPrice",
+                "type": "uint256"
+            }
+        ],
+        "name": "retBuyProd",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "prodID",
+                "type": "uint256"
+            }
+        ],
+        "name": "buy",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "getAllProducts",
+        "outputs": [
+            {
+                "type": "prod[]"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "getAllSuppliers",
+        "outputs": [
+            {
+                "type": "supplier[]"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
 
-async function registerManufacturer() {
-    var result = await window.ethereum.request({ method: 'eth_chainId' });
-}
 
+const contractAddress = '0xe235c2165F9E2EB38e9e71Ea1e14D0C06Bd0BCa8';
+const fromAddress = await window.ethereum.request({ method: 'eth_accounts' });
+const methodName = 'createMan';
+let manName = document.getElementById('manu').value;
+// let manName = "TEST";
+console.log(manName.toString());
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+const contract = new ethers.Contract(contractAddress, abi, signer);
 
-// Replace this with the actual address you're sending the transaction from
-const fromAddress = '0xYourSenderAddress';
+// CREATE MANUFACTURER
+document.getElementById('createManBtn').addEventListener('click', async () => {
+    console.log("Pressed");
+    try {
+        const tx = await contract[methodName](manName);
+        console.log("Transaction hash:", tx.hash);
+        await tx.wait();
+        console.log("Transaction confirmed");
+    } catch (error) {
+        console.error("Error:", error);
+    }
+});
 
-// Create a new contract instance
-const contract = new window.ethereum.Contract(contractABI, contractAddress);
+//ADD A PRODUCT ONTO NETWORK
+document.getElementById('addProdBtn').addEventListener('click', async () => {
+    console.log("Pressed");
+    try {
+        // Get the product details from the input fields
+        const prodName = document.getElementById('prodName').value;
+        const prodDesc = document.getElementById('prodDesc').value;
+        const prodPrice = document.getElementById('prodPrice').value;
 
-// Replace 'getSomeValue' with the name of the method you want to invoke
-const methodName = 'getSomeValue';
+        // Convert product price to a BigNumber for transaction
+        const priceBN = ethers.utils.parseUnits(prodPrice, 'ether');
 
-// Call the method
-const result = await contract.methods[methodName]().call({ from: fromAddress });
+        // Create a transaction to invoke the 'addProd' function
+        const tx = await contract.addProd(prodName, prodDesc, priceBN);
 
-console.log('Smart contract method result:', result);
+        // Wait for the transaction to be confirmed
+        await tx.wait();
+
+        // Log a message upon successful transaction confirmation
+        console.log("Transaction confirmed");
+    } catch (error) {
+        // Handle any errors that occur during the process
+        console.error("Error:", error);
+    }
+});
+
+// SHOW LIST OF PRODUCTS
+document.getElementById('prodListBtn').addEventListener('click', async () => {
+    console.log("Fetching products...");
+
+    // Call the contract's `getAllProducts` function
+    const products = await contract.getAllProducts();
+
+    // Clear the existing product list
+    document.getElementById('prodList').innerHTML = '';
+
+    // Create list items for each product
+    for (const product of products) {
+        const productItem = document.createElement('li');
+        productItem.textContent = `Product ID: ${product.productId}, Name: ${product.productName}, Price: ${ethers.utils.formatUnits(product.productPrice, 'ether')} ETH`;
+        document.getElementById('prodList').appendChild(productItem);
+    }
+});
